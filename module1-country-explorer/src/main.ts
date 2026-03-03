@@ -31,7 +31,8 @@
 // =============================================================================
 
 import type { Country, UiState } from './types/country';
-import { searchCountries, ApiError } from './services/countryApi';
+//se importo tambien getCountriesByRegion
+import { searchCountries, getCountriesByRegion,ApiError } from './services/countryApi';
 import { renderCountryList } from './components/CountryCard';
 import { openModal } from './components/CountryModal';
 import { getRequiredElement, showElement, hideElement, onDOMReady, debounce } from './utils/dom';
@@ -49,6 +50,8 @@ let currentState: UiState = { status: 'idle' };
 /** Última búsqueda realizada (para evitar búsquedas duplicadas) */
 let lastSearchQuery = '';
 
+//para saber la region actual
+let currentRegion ='';
 // =============================================================================
 // REFERENCIAS A ELEMENTOS DEL DOM
 // =============================================================================
@@ -65,6 +68,8 @@ let errorMessage: HTMLElement;
 let emptyState: HTMLElement;
 let noResultsState: HTMLElement;
 let countriesList: HTMLElement;
+//dropdown para filtrar paises por region
+let regionFilter:HTMLSelectElement
 
 /**
  * Inicializa las referencias a los elementos del DOM.
@@ -80,6 +85,8 @@ function initializeElements(): void {
   emptyState = getRequiredElement<HTMLElement>('#emptyState');
   noResultsState = getRequiredElement<HTMLElement>('#noResultsState');
   countriesList = getRequiredElement<HTMLElement>('#countriesList');
+  //obtener la referencia al select de regiones
+  regionFilter = getRequiredElement<HTMLSelectElement>('#regionFilter')
 }
 
 // =============================================================================
@@ -161,6 +168,32 @@ function render(state: UiState): void {
     }
   }
 }
+
+
+//obtener paises aplicando busqueda y region de forma combinada
+async function getFilteredCountries(query: string, region: string): Promise<Country[] | null> {
+  const hasQuery = query.length > 0;
+  const hasRegion = region.length > 0;
+
+  //sin filtros activos
+  if (!hasQuery && !hasRegion) return null;
+
+  //solo filtro de region
+  if (hasRegion && !hasQuery) {
+    return getCountriesByRegion(region as 'Africa' | 'Americas' | 'Asia' | 'Europe' | 'Oceania');
+  }
+
+  //solo el texto de busqueda
+  if (hasQuery && !hasRegion) {
+    return searchCountries(query);
+  }
+
+  //ambos activos busca por nombre y filtra por region
+  const results = await searchCountries(query);
+  return results.filter(c => c.region === region);
+}
+
+
 
 // =============================================================================
 // MANEJADORES DE EVENTOS
