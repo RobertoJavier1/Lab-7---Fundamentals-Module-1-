@@ -50,8 +50,12 @@ let currentState: UiState = { status: 'idle' };
 /** Última búsqueda realizada (para evitar búsquedas duplicadas) */
 let lastSearchQuery = '';
 
-//para saber la region actual
+//ultiam region buscada
+let lastRegion = '';
+
+//la region actual
 let currentRegion = '';
+
 // =============================================================================
 // REFERENCIAS A ELEMENTOS DEL DOM
 // =============================================================================
@@ -222,12 +226,13 @@ async function handleSearch(): Promise<void> {
     return;
   }
 
-  // Evitamos búsquedas duplicadas
-  if (query === lastSearchQuery && currentState.status === 'success') {
+  // Evitamos búsquedas duplicadas, tambien verifica lastRegion
+  if (query === lastSearchQuery && region == lastRegion && currentState.status === 'success') {
     return;
   }
 
   lastSearchQuery = query;
+  lastRegion = region
 
   // Mostramos estado de carga
   render({ status: 'loading' });
@@ -330,6 +335,9 @@ function setupEventListeners(): void {
 
   // Botón de reintentar
   retryButton.addEventListener('click', handleRetry);
+
+  //dropdown de region: filtra al cambiar la region
+  regionFilter.addEventListener('change',handleRegionChange)
 }
 
 /**
