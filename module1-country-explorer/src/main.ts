@@ -51,7 +51,7 @@ let currentState: UiState = { status: 'idle' };
 let lastSearchQuery = '';
 
 //para saber la region actual
-let currentRegion ='';
+let currentRegion = '';
 // =============================================================================
 // REFERENCIAS A ELEMENTOS DEL DOM
 // =============================================================================
@@ -69,7 +69,7 @@ let emptyState: HTMLElement;
 let noResultsState: HTMLElement;
 let countriesList: HTMLElement;
 //dropdown para filtrar paises por region
-let regionFilter:HTMLSelectElement
+let regionFilter: HTMLSelectElement
 
 /**
  * Inicializa las referencias a los elementos del DOM.
@@ -86,7 +86,7 @@ function initializeElements(): void {
   noResultsState = getRequiredElement<HTMLElement>('#noResultsState');
   countriesList = getRequiredElement<HTMLElement>('#countriesList');
   //obtener la referencia al select de regiones
-  regionFilter = getRequiredElement<HTMLSelectElement>('#regionFilter')
+  regionFilter = getRequiredElement<HTMLSelectElement>('#regionFilter');
 }
 
 // =============================================================================
@@ -211,9 +211,12 @@ async function getFilteredCountries(query: string, region: string): Promise<Coun
  */
 async function handleSearch(): Promise<void> {
   const query = searchInput.value.trim();
+  //guardar la region
+  const region = currentRegion;
 
   // Si la búsqueda está vacía, volvemos al estado inicial
-  if (query.length === 0) {
+  // el === es una igualdada estricta
+  if (query.length === 0 && region.length === 0) {
     render({ status: 'idle' });
     lastSearchQuery = '';
     return;
@@ -236,9 +239,11 @@ async function handleSearch(): Promise<void> {
     // await pausa la ejecución hasta que la Promise se resuelve.
     // Si la Promise se rechaza, el error se captura en el catch.
     // =========================================================================
-    const countries = await searchCountries(query);
+    
+    // filtrar por busqueda y region
+    const countries = await getFilteredCountries(query, region);
 
-    if (countries.length === 0) {
+    if (!countries || countries.length === 0) {
       render({ status: 'empty' });
     } else {
       render({ status: 'success', data: countries });
@@ -258,6 +263,15 @@ async function handleSearch(): Promise<void> {
     // Log para debugging (en producción usaríamos un servicio de logging)
     console.error('Error en búsqueda:', error);
   }
+}
+
+//maneja el cambio de region en el dropdown, fuerza una nueva busqueda combinando region y texto actual
+
+function handleRegionChange():void{
+  currentRegion = regionFilter.value;
+  //reinicio de lastSearchQuery para forzar la busqueda de nuevo aunque no cambie el texto
+  lastSearchQuery = '';
+  void handleSearch();
 }
 
 /**
