@@ -196,6 +196,28 @@ export function renderCountryList(
   container.appendChild(fragment);
 }
 
+
+//actualiza el icono y etiqueta del boton de favoritos de una tarjeta de pais
+//Si la tarjeta o el botón no existen en el contenedor no hace nada
+export function updateFavoriteButton(
+  cca3: string,
+  isFavorite: boolean,
+  container: HTMLElement
+): void {
+  const card = container.querySelector<HTMLElement>(`[data-cca3="${cca3}"]`);
+  if(!card){
+    return;
+  }
+
+  const button = card.querySelector<HTMLButtonElement>('.favorite-btn');
+  if(!button){
+    return;
+  }
+
+  button.innerHTML = isFavorite ? HEART_FILLED : HEART_OUTLINE;
+  button.setAttribute('aria-label', isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos');
+}
+
 const HEART_OUTLINE = `
   <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
     <path stroke-linecap="round" stroke-linejoin="round"
