@@ -15,6 +15,8 @@
 import type { Country } from '../types/country';
 import { formatNumber, formatCapitals } from '../utils/format';
 import { createElement } from '../utils/dom';
+import { eventNames } from 'process';
+import { count } from 'console';
 
 /**
  * Crea una tarjeta de país para mostrar en la lista.
@@ -40,10 +42,14 @@ import { createElement } from '../utils/dom';
  */
 export function createCountryCard(
   country: Country,
-  onClick: (country: Country) => void
+  onClick: (country: Country) => void,
+  isFavorite: boolean = false, //para saber si es favorito o no
+  onFavoriteToggle: (country:Country) => void = () => {} //callback al hacer toggle de favoritos
 ): HTMLElement {
   // Creamos el contenedor principal usando nuestra utilidad
   const card = createElement('article', 'country-card', 'cursor-pointer');
+  //guarda el cca3 en el DOM para identificar la tarjeta
+  card.dataset.cca3 = country.cca3;
 
   // Agregamos atributos de accesibilidad
   card.setAttribute('role', 'button');
@@ -69,6 +75,15 @@ export function createCountryCard(
       <span class="absolute top-3 right-3 px-3 py-1 bg-slate-900/80 text-slate-200 text-xs font-medium rounded-full backdrop-blur-sm">
         ${country.region}
       </span>
+
+      <!-- Boton de favorito -->
+      <button
+          class="favorite-btn absolute top-3 left-3 w-9 h-9 flex items-center justify-center rounded-full bg-slate-900/70 backdrop-blur-sm transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-400"
+          aria-label="${isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}"
+          data-cca3="${country.cca3}"
+      >
+          ${isFavorite ? HEART_FILLED : HEART_OUTLINE}
+      </button>
     </div>
 
     <div class="p-5">
@@ -137,6 +152,17 @@ export function createCountryCard(
   return card;
 }
 
+
+const favoriteButton = card.querySelector<HTMLButtonElement>('.favorite-btn');
+// escucha el click del boton favorito sin propagar el evento a la tarjeta
+if (favoriteButton){
+  favoriteButton.addEventListener('click', (event:MouseEvent)=>{
+    //evita que el click se propague y abra el detalle del pais
+    event.stopPropagation();
+    onFavoriteToggle(country);
+  });
+}
+
 /**
  * Renderiza una lista de países en un contenedor.
  *
@@ -169,3 +195,19 @@ export function renderCountryList(
   // Una sola operación DOM para todos los elementos
   container.appendChild(fragment);
 }
+
+const HEART_OUTLINE = `
+  <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round"
+      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+    />
+  </svg>
+`;
+
+const HEART_FILLED = `
+  <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+    <path
+      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+    />
+  </svg>
+`;
