@@ -67,6 +67,40 @@
               <option value="Oceania">Oceanía</option>
             </select>
           </div>
+
+          <!-- Barra de favoritos-->
+          <div id="favoritesBar" class="hidden mt-3 flex items-center justify-between px-1">
+
+            <label class="flex items-center gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  id="favoritesToggle"
+                  class="w-5 h-5 rounded accent-red-500 cursor-pointer"
+                />
+                <span class="text-slate-300 text-sm font-medium flex items-center gap-2">
+                  <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                  </svg>
+                  Solo favoritos
+                  <span
+                    id="favoritesCount"
+                    class="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs font-bold rounded-full"
+                  >
+                    0
+                  </span>
+                </span>
+            </label>
+
+              <!-- Botón limpiar -->
+              <button
+                id="clearFavoritesBtn"
+                class="text-sm text-slate-500 hover:text-red-400 transition-colors underline underline-offset-2"
+              >
+                Limpiar favoritos
+              </button>
+
+          </div>
+
         </div>
       </header>
 
@@ -105,6 +139,13 @@
         <div id="noResultsState" class="hidden text-center py-12">
           <p class="text-slate-400 text-xl">
             😕 No se encontraron países con ese nombre
+          </p>
+        </div>
+
+        <!-- Sin favoritos -->
+        <div id="noFavoritesState" class="hidden text-center py-12">
+          <p class="text-slate-400 text-xl">
+            😕 Aún no tienes favoritos
           </p>
         </div>
 
