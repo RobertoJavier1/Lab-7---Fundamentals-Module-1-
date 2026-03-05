@@ -251,3 +251,12 @@ export async function getCountriesByRegion(
     throw new ApiError('Error al obtener países por región', undefined, error);
   }
 }
+
+//hace una llamada a la API para obtener paises por sus codigos cca3
+export async function getCountriesByCodes(codes: string[]): Promise<Country[]> {
+  if (codes.length === 0) return [];
+  const joined = codes.join(',');
+  const response = await fetch(`${BASE_URL}/alpha?codes=${joined}`);
+  if (!response.ok) return [];
+  return response.json();
+}

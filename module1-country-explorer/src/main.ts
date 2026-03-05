@@ -32,10 +32,12 @@
 
 import type { Country, UiState } from './types/country';
 //se importo tambien getCountriesByRegion
-import { searchCountries, getCountriesByRegion,ApiError } from './services/countryApi';
-import { renderCountryList } from './components/CountryCard';
+import { searchCountries, getCountriesByRegion, getCountriesByCodes, ApiError } from './services/countryApi';
+import { renderCountryList, updateFavoriteButton } from './components/CountryCard';
 import { openModal } from './components/CountryModal';
 import { getRequiredElement, showElement, hideElement, onDOMReady, debounce } from './utils/dom';
+import { getFavorites, toggleFavorite, clearAllFavorites } from './utils/storage';
+
 
 // =============================================================================
 // ESTADO DE LA APLICACIÓN
@@ -56,6 +58,13 @@ let lastRegion = '';
 //la region actual
 let currentRegion = '';
 
+//set con los codigos cca3 de los paises favoritos
+//se inicializa obteniendo los favoritos de localStorage
+let favoriteCodes: Set<string> = new Set(getFavorites());
+
+//filtro de favoritos
+let showOnlyFavorites = false;
+
 // =============================================================================
 // REFERENCIAS A ELEMENTOS DEL DOM
 // =============================================================================
@@ -75,6 +84,13 @@ let countriesList: HTMLElement;
 //dropdown para filtrar paises por region
 let regionFilter: HTMLSelectElement
 
+//manipulacion de favoritos
+let favoritesBar: HTMLElement;
+let favoritesToggle: HTMLInputElement;
+let favoritesCount: HTMLElement;
+let clearFavoritesBtn: HTMLButtonElement;
+let noFavoritesState: HTMLElement
+
 /**
  * Inicializa las referencias a los elementos del DOM.
  * Se llama una vez cuando la aplicación arranca.
@@ -89,8 +105,12 @@ function initializeElements(): void {
   emptyState = getRequiredElement<HTMLElement>('#emptyState');
   noResultsState = getRequiredElement<HTMLElement>('#noResultsState');
   countriesList = getRequiredElement<HTMLElement>('#countriesList');
-  //obtener la referencia al select de regiones
   regionFilter = getRequiredElement<HTMLSelectElement>('#regionFilter');
+  favoritesBar = getRequiredElement<HTMLElement>('#favoritesBar');
+  favoritesToggle = getRequiredElement<HTMLInputElement>('#favoritesToggle');
+  favoritesCount = getRequiredElement<HTMLElement>('#favoritesCount');
+  clearFavoritesBtn = getRequiredElement<HTMLButtonElement>('#clearFavoritesBtn');
+  noFavoritesState = getRequiredElement<HTMLElement>('#noFavoritesState');
 }
 
 // =============================================================================
@@ -109,6 +129,7 @@ function hideAllStates(): void {
   hideElement(errorState);
   hideElement(emptyState);
   hideElement(noResultsState);
+  hideElement(noFavoritesState);
   hideElement(countriesList);
 }
 
@@ -124,6 +145,13 @@ function hideAllStates(): void {
  */
 function render(state: UiState): void {
   currentState = state;
+
+  //si modo favorito esta activo, llamamos a renderFavoriteList() y salimos  
+  if(showOnlyFavorites){
+    renderFavoriteList();
+    return;
+  }
+
   hideAllStates();
 
   // =========================================================================
@@ -149,7 +177,13 @@ function render(state: UiState): void {
         showElement(noResultsState);
       } else {
         showElement(countriesList);
-        renderCountryList(state.data, countriesList, handleCountryClick);
+        renderCountryList(
+          state.data,
+          countriesList,
+          handleCountryClick,
+          favoriteCodes,
+          handleFavoriteToogle
+        );
       }
       break;
 
@@ -197,6 +231,16 @@ async function getFilteredCountries(query: string, region: string): Promise<Coun
   return results.filter(c => c.region === region);
 }
 
+//actualiza la barra de favoritos segun cuantos favoritos hay
+function updateFavoritesBar(): void{
+  const count = favoriteCodes.size;
+  favoritesCount.textContent = String(count);
+
+  if(count===0){
+    showOnlyFavorites = false;
+    favoritesToggle.checked = false;
+  }
+}
 
 
 // =============================================================================
@@ -279,6 +323,74 @@ function handleRegionChange():void{
   void handleSearch();
 }
 
+//maneja el evento cuando se clickea el boton de favorito en una tarjeta
+function handleFavoriteToogle(country: Country): void{
+  const nowFavorite = toggleFavorite(country.cca3);
+
+  if(nowFavorite){
+    favoriteCodes.add(country.cca3);
+  }else{
+    favoriteCodes.delete(country.cca3);
+  }
+
+  //actualiza el icono de solo esa tarjeta
+  updateFavoriteButton(country.cca3, nowFavorite, countriesList);
+
+  //actualiza el contador y visibilidad de la barra
+  updateFavoritesBar();
+
+  //si el filtro favoritos esta activo, re renderiza la lista
+  if(showOnlyFavorites){
+    renderFavoriteList();
+  }
+}
+
+//renderiza la lista filtrada mostrando solo los paises favoritos
+function renderFavoriteList():void {
+  hideAllStates();
+
+  if(favoriteCodes.size===0){
+    showElement(noFavoritesState);
+    return;
+  }
+
+  if(currentState.status === 'success'){
+    //filtra currentState.data quedandose solo con los paises que su cca3 esta en favoritesCodes
+    const favoriteCountries = currentState.data.filter((c) => favoriteCodes.has(c.cca3));
+
+    if(favoriteCountries.length===0){
+      showElement(noFavoritesState);
+    }else{
+      showElement(countriesList);
+      renderCountryList(
+        favoriteCountries,
+        countriesList,
+        handleCountryClick,
+        favoriteCodes,
+        handleFavoriteToogle
+      );
+    }
+  }else{
+    //no hay busqueda activa buscamos los favoritose en la API
+    showElement(loadingState);
+    void getCountriesByCodes([...favoriteCodes]).then((countries) => {
+      hideElement(loadingState);
+      if (countries.length === 0) {
+        showElement(noFavoritesState);
+      } else {
+        showElement(countriesList);
+        renderCountryList(
+          countries,
+          countriesList,
+          handleCountryClick,
+          favoriteCodes,
+          handleFavoriteToogle
+        );
+      }
+  });
+  }
+}
+
 /**
  * Maneja el click en una tarjeta de país.
  * Abre el modal con los detalles del país.
@@ -333,6 +445,30 @@ function setupEventListeners(): void {
     }
   });
 
+  //maneja el evento de cuando el usuario marca o desmarca el checkbox de solo favoritos
+  favoritesToggle.addEventListener('change',()=>{
+    showOnlyFavorites = favoritesToggle.checked;
+
+    if(showOnlyFavorites){
+      renderFavoriteList();
+    }else{
+      render(currentState);
+    }
+  });
+
+  //boton para limpiar favoritos
+  clearFavoritesBtn.addEventListener('click',() => {
+    clearAllFavorites();
+    favoriteCodes.clear();
+    updateFavoritesBar();
+
+    if(showOnlyFavorites){
+      renderFavoriteList();
+    }else{
+      render(currentState);
+    }
+  });
+
   // Botón de reintentar
   retryButton.addEventListener('click', handleRetry);
 
@@ -354,6 +490,9 @@ function initializeApp(): void {
 
     // Configuramos los event listeners
     setupEventListeners();
+
+    //carga favoritos de localStorage
+    updateFavoritesBar()
 
     // Mostramos el estado inicial
     render({ status: 'idle' });
