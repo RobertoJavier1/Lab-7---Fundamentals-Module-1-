@@ -15,8 +15,6 @@
 import type { Country } from '../types/country';
 import { formatNumber, formatCapitals } from '../utils/format';
 import { createElement } from '../utils/dom';
-import { eventNames } from 'process';
-import { count } from 'console';
 
 /**
  * Crea una tarjeta de país para mostrar en la lista.
@@ -148,32 +146,38 @@ export function createCountryCard(
       onClick(country);
     }
   });
+  
+  const favoriteButton = card.querySelector<HTMLButtonElement>('.favorite-btn');
+  //manejador del click del boton favorito sin propagar el evento a la tarjeta
+  if (favoriteButton){
+    favoriteButton.addEventListener('click', (event:MouseEvent)=>{
+      //evita que el click se propague y abra el detalle del pais
+      event.stopPropagation();
+      onFavoriteToggle(country);
+    });
+  }
 
   return card;
 }
 
 
-const favoriteButton = card.querySelector<HTMLButtonElement>('.favorite-btn');
-// escucha el click del boton favorito sin propagar el evento a la tarjeta
-if (favoriteButton){
-  favoriteButton.addEventListener('click', (event:MouseEvent)=>{
-    //evita que el click se propague y abra el detalle del pais
-    event.stopPropagation();
-    onFavoriteToggle(country);
-  });
-}
+
 
 /**
- * Renderiza una lista de países en un contenedor.
- *
- * @param countries - Array de países a renderizar
- * @param container - Elemento donde insertar las tarjetas
- * @param onCardClick - Callback cuando se hace click en una tarjeta
- */
+* Renderiza una lista de países en un contenedor.
+*
+* @param countries - Array de países a renderizar
+* @param container - Elemento donde insertar las tarjetas
+* @param onCardClick - Callback cuando se hace click en una tarjeta
+* @param onFavoriteToggle - Callback cuando se hace click en el boton favorito
+* @param favoriteCodes - Conjunto de codigos de paises que se marcaron como favorito
+*/
 export function renderCountryList(
   countries: Country[],
   container: HTMLElement,
-  onCardClick: (country: Country) => void
+  onCardClick: (country: Country) => void,
+  favoriteCodes: Set<string> = new Set(),
+  onFavoriteToggle: (country:Country) => void = () => {}
 ): void {
   // Limpiamos el contenedor de forma eficiente
   container.replaceChildren();
@@ -188,13 +192,36 @@ export function renderCountryList(
   const fragment = document.createDocumentFragment();
 
   for (const country of countries) {
-    const card = createCountryCard(country, onCardClick);
-    fragment.appendChild(card);
+    const card = createCountryCard(
+      country, 
+      onCardClick,
+      favoriteCodes.has(country.cca3),
+      onFavoriteToggle
+    );
+      fragment.appendChild(card);
+    }
+
+    // Una sola operación DOM para todos los elementos
+    container.appendChild(fragment);
   }
 
-  // Una sola operación DOM para todos los elementos
-  container.appendChild(fragment);
-}
+
+
+const HEART_OUTLINE = `
+  <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round"
+      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+    />
+  </svg>
+`;
+
+const HEART_FILLED = `
+  <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+    <path
+      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+    />
+  </svg>
+`;
 
 
 //actualiza el icono y etiqueta del boton de favoritos de una tarjeta de pais
@@ -218,18 +245,3 @@ export function updateFavoriteButton(
   button.setAttribute('aria-label', isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos');
 }
 
-const HEART_OUTLINE = `
-  <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round"
-      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-    />
-  </svg>
-`;
-
-const HEART_FILLED = `
-  <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-    <path
-      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-    />
-  </svg>
-`;
