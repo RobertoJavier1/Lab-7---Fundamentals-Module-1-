@@ -42,6 +42,3 @@ Se implementó un sistema de favoritos que agrega un ícono de corazón a cada t
 | 7 | Limpiar favoritos | Botón para borrar todos los favoritos | ✅ |
 
 ---
-
-**REST Countries API v3.1** — https://restcountries.com  
-Sin autenticación requerida.
