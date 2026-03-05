@@ -346,6 +346,7 @@ function handleFavoriteToogle(country: Country): void{
 }
 
 //renderiza la lista filtrada mostrando solo los paises favoritos
+//si hay filtros activos usa los datos en memoria, si no va a la API
 function renderFavoriteList():void {
   hideAllStates();
 
@@ -354,7 +355,10 @@ function renderFavoriteList():void {
     return;
   }
 
-  if(currentState.status === 'success'){
+  const hasSearch = lastSearchQuery.length > 0;
+  const hasRegion = currentRegion.length > 0;
+
+  if(currentState.status === 'success' && (hasSearch || hasRegion)){
     //filtra currentState.data quedandose solo con los paises que su cca3 esta en favoritesCodes
     const favoriteCountries = currentState.data.filter((c) => favoriteCodes.has(c.cca3));
 
@@ -370,7 +374,8 @@ function renderFavoriteList():void {
         handleFavoriteToogle
       );
     }
-  }else{
+  }else if(!hasSearch && !hasRegion){
+    //sin filtros
     //no hay busqueda activa buscamos los favoritose en la API
     showElement(loadingState);
     void getCountriesByCodes([...favoriteCodes]).then((countries) => {
@@ -388,6 +393,8 @@ function renderFavoriteList():void {
         );
       }
   });
+  }else{
+    showElement(noFavoritesState);
   }
 }
 
