@@ -7,7 +7,7 @@
 
 Se realizó un filtro con un `<select>` dropdown que permite filtrar países por región. El filtro funciona en combinación con el input de búsqueda por nombre, permitiendo aplicar ambos criterios de forma simultánea. También incluye la opción "All Regions" para resetear el filtro de región.
 
-**Video explicativo:** 
+**Video explicativo:** https://youtu.be/BGVbjIJ_xkY
 
 ### Definition of Done — Parte 1
 
@@ -27,7 +27,7 @@ Se realizó un filtro con un `<select>` dropdown que permite filtrar países por
 
 Se implementó un sistema de favoritos que agrega un ícono de corazón a cada tarjeta de país. Al hacer clic en el corazón, el país se agrega o elimina de la lista de favoritos. Los favoritos se almacenan en `localStorage` para que persistan entre recargas de página. También se agregó un toggle de "Favorites Only" para mostrar únicamente los países marcados como favoritos, y un botón para limpiar todos los favoritos.
 
-**Video explicativo:**
+**Video explicativo:** https://youtu.be/Xch6aqBq8Wk
 
 ### Definition of Done — Parte 2
 
