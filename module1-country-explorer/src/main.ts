@@ -239,6 +239,7 @@ function updateFavoritesBar(): void{
   if(count===0){
     showOnlyFavorites = false;
     favoritesToggle.checked = false;
+    render(currentState);
   }
 }
 
